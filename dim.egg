@@ -1,0 +1,14 @@
+(datatype Dim (Plus Dim Dim) (NamedDim String) (Lit i64))
+
+; Constant folding for cast id
+(rewrite (Plus (Lit a) (Lit b)) (Lit (+ a b)))
+(rewrite (Lit a) (Lit b)
+  :when ((= a b)))
+(let zero (Lit 0))
+(let one (Lit 1))
+(let l (Plus one (Plus zero zero)))
+(let x (Plus one zero))
+(let r one)
+(let eq (= r one))
+(run 100)
+(query-extract eq)

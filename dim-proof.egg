@@ -1,0 +1,59 @@
+; Base datatypes
+(datatype Dim (Plus Dim Dim) (NamedDim String) (Lit i64))
+
+; Proof data type, builds proof trees as follows
+; - A -> A (Refl)
+; - A -> B (Edge) 
+; - (A -> B) /\ (B -> C) => (A -> C) (Trans)
+; - (A -> B) /\ (C -> D) => (A /\ C) -> (B /\ D) (Join)
+
+(datatype Proof
+  (Refl Dim)
+  ; (Edge Dim Dim String)
+  (Trans Dim String Proof)
+  (Join Dim Proof Proof))
+
+; Realtion to carry proof terms
+(relation path (Dim Dim Proof i64))
+(relation edge (Dim Dim String))
+; This function is to state the goals so it becomes easier to query the results of the path function
+(relation goals (Dim Dim))
+
+; Actual rules encoded as proof edge generators
+(rule ((= x (Plus (Lit 0) a)))
+  ((edge (Plus (Lit 0) a) a "add-0-r")))
+(rule ((= x (Plus (Lit a) (Lit b))))
+  ((edge (Plus (Lit a) (Lit b)) (Lit (+ a b)) "c-fold")))
+
+; Building the proof tree
+(rule ((edge x y s))
+  ((path x y (Trans x s (Refl y)) 1)))
+(rule ((edge x y s) (path y z p d))
+  ((path x z (Trans x s p) (+ 1 d))))
+
+; Plus multiside rules
+(rule ((= a (Plus x1 x2)) (path x1 y1 p1 d1) (path x2 y2 p2 d2))
+  ((path a (Plus y1 y2) (Join a p1 p2) (+ 1 (+ d1 d2)))))
+; Todo: Only have these rules kick in if the prev one doesn't.
+; Right now this makes the path function blow up
+(rule ((= a (Plus x1 x2)) (path x1 y1 p1 d1))
+  ((path a (Plus y1 x2) (Join a p1 (Refl x2)) (+ 1 d1))))
+(rule ((= a (Plus x1 x2)) (path x2 y2 p2 d2))
+  ((path a (Plus x1 y2) (Join a (Refl x2) p2) (+ 1 d2))))
+
+
+; We consider equal all paths tha connect same points.
+; Smallest Extraction will extract shortest path.
+(rule ((path x y p1 d1) (path x y p2 d2))
+  ((union p1 p2) (min d1 d2)))
+
+(let l (Plus (Plus (Lit 1) (Lit 4)) (Plus (Lit 0) (NamedDim "x"))))
+(let r (Plus (Lit 5) (NamedDim "x")))
+(goals l r)
+(let l2 (Plus (Plus (Lit 2) (Lit 7)) (NamedDim "y")))
+(let r2 (Plus (Lit 9) (NamedDim "y")))
+(goals l2 r2)
+(run 100)
+
+(print-function goals 1000)
+(print-function path 1000)

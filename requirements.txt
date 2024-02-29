@@ -5,7 +5,7 @@ click==8.1.7
 comm==0.2.1
 debugpy==1.8.1
 decorator==5.1.1
-egglog==6.0.0
+egglog==6.0.1
 executing==2.0.1
 graphviz==0.20.1
 ipykernel==6.29.2
